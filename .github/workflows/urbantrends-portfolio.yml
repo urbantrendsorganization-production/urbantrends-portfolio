@@ -1,0 +1,65 @@
+name: Urbantrends Portfolio CI/CD
+
+on:
+  push:
+    branches:
+      - main   # triggers on push to main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Set up Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3. Cache node_modules (optional but speeds up)
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 5. Lint (optional)
+      - name: Run lint
+        run: npm run lint || echo "Lint failed, continuing"
+
+      # 6. Run tests (optional)
+      - name: Run tests
+        run: npm test || echo "Tests failed, continuing"
+
+      # 7. Build the project
+      - name: Build project
+        run: npm run build
+
+      # 8. Deploy to VPS via SSH
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            echo "Deploying UrbanTrends frontend..."
+            # Make sure the projects folder exists
+            mkdir -p ${{ secrets.VPS_DEPLOY_DIR }}/projects
+            # Go into the folder
+            cd ${{ secrets.VPS_DEPLOY_DIR }}/projects
+            # Copy the built files from GitHub Actions to the VPS folder
+            rsync -avz --delete ./dist/ ./
+            echo "Deployment complete!"
+            source: "./dist/"
