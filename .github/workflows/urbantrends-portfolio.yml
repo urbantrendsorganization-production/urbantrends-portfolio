@@ -1,8 +1,9 @@
-name: Deploy to VPS
+name: Deploy Projects
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -18,14 +19,13 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          overwrite: true
+          rm: true
 
-          # send BOTH folders
+          # copy BOTH react projects
           source: |
             style_co/*
             velora-clothes/*
 
-          # main /projects dir
-          target: ${{ secrets.VPS_PROJECTS_DIR }}
-
-          overwrite: true
-          rm: true
+          target: ${{ secrets.VPS_PROJECTS_DIR }}/stores
