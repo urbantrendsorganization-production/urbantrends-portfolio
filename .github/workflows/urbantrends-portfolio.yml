@@ -1,33 +1,22 @@
-name: UrbanTrends Portfolio Deploy
+name: Deploy to VPS
 
 on:
   push:
-    branches:
-      - main   # triggers on push to main branch
+    branches: ["main"]
 
 jobs:
-  deploy-projects:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repo
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      # 2. Deploy projects to VPS via SSH
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v0.1.6
+      - name: Deploy via SSH
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
-          script: |
-            echo "Deploying UrbanTrends projects..."
-            # Create main projects folder on VPS
-            mkdir -p ${{ secrets.VPS_DEPLOY_DIR }}/ecommerce
-            # Deploy first project
-            rsync -avz --delete $GITHUB_WORKSPACE/style_co/ ${{ secrets.VPS_DEPLOY_DIR }}/ecommerce/style_co/
-            # Deploy second project
-            rsync -avz --delete $GITHUB_WORKSPACE/velora-clothes/ ${{ secrets.VPS_DEPLOY_DIR }}/ecommerce/velora-clothes/
-            echo "Deployment complete!"
+          source: "style_co*,velora-clothes/*"
+          target: "${{ secrets.VPS_PROJECTS_DIR }}"
